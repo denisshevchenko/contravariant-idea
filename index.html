@@ -17,11 +17,11 @@
         font-weight: normal;
       }
 
-      h1 { font-size: 2.9em !important; }
-      h2 { font-size: 2.3em !important; }
-      h3 { font-size: 1.9em !important; }
+      h1 { font-size: 2.6em !important; }
+      h2 { font-size: 1.8em !important; }
+      h3 { font-size: 1.5em !important; }
       h4 {
-        font-size: 1.5em !important;
+        font-size: 1.3em !important;
         margin-block-start: 0.73em;
         margin-block-end: 0.73em;
       }
@@ -36,7 +36,7 @@
       }
 
       .remark-code {
-        font-size: 1.1em;
+        font-size: 0.9em;
       }
 
       .remark-inline-code {
@@ -49,7 +49,11 @@
 
       .terminal {
         font-family: 'Ubuntu Mono';
-        font-size: 0.9em !important;
+        font-size: 0.75em !important;
+      }
+
+      .smaller-code .remark-code {
+        font-size: 0.68em;
       }
     </style>
   </head>
@@ -231,8 +235,8 @@ contramap f       s              = Stringifier (runStringifier s              . 
 contramap times10 intStringifier = Stringifier (runStringifier intStringifier . times10)
 ```
 
-<span style="padding-left: 535px;"></span>┗━━━━━━━━━━━━━━━━━━━━━━━━━┛<span style="padding-left: 29px;"></span>┗━━━━━┛
-##### <span style="padding-left: 535px;"></span>`Int -> String`<span style="padding-left: 227px;"></span>`MyNumber -> Int`
+<span style="padding-left: 439px;"></span>┗━━━━━━━━━━━━━━━━━━━━┛<span style="padding-left: 23px;"></span>┗━━━━┛
+##### <span style="padding-left: 439px;"></span>`Int -> String`<span style="padding-left: 160px;"></span>`MyNumber -> Int`
 
 ---
 
@@ -248,8 +252,8 @@ contramap f       s              = Stringifier (runStringifier s              . 
 contramap times10 intStringifier = Stringifier (runStringifier intStringifier . times10)
 ```
 
-<span style="padding-left: 535px;"></span>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-##### <span style="padding-left: 535px;"></span>`MyNumber -> String`
+<span style="padding-left: 439px;"></span>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+##### <span style="padding-left: 439px;"></span>`MyNumber -> String`
 
 ---
 
@@ -265,8 +269,8 @@ contramap f       s              = Stringifier (runStringifier s              . 
 contramap times10 intStringifier = Stringifier (runStringifier intStringifier . times10)
 ```
 
-<span style="padding-left: 535px;"></span>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-##### <span style="padding-left: 535px;"></span>`MyNumber -> String`
+<span style="padding-left: 439px;"></span>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+##### <span style="padding-left: 439px;"></span>`MyNumber -> String`
 
 #### That's what `Contravariant` does!
 
@@ -363,13 +367,13 @@ main :: IO ()
 main = do
   c <- defaultConfigStdout
   trace :: Trace IO String <- setupTrace (Right c) "simple"
-  logInfo trace "this is a string info message"
+  logInfo trace "string info message"
 ```
 
 #### Output:
 
 .terminal[
-[iohk.simple:Info:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "this is a string info message"
+[iohk.simple:Info:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "string info message"
 ]
 
 ---
@@ -377,24 +381,88 @@ main = do
 ## Real Life example
 
 ```haskell
-data Weird = Weird { ss :: String, ii :: Int }
-  deriving (Generic, Show, Eq, Ord, FromJSON, ToJSON)
+data MyMessage = MyMessage { ss :: String, ii :: Int }
+  deriving (Generic, Show, Eq, ToJSON)
+
+converter :: LogObject MyMessage -> LogObject String
+converter (LogObject nm me (LogMessage c)) = LogObject nm me (LogMessage (show c))
 
 main :: IO ()
 main = do
   c <- defaultConfigStdout
-  trace :: Trace IO String <- setupTrace (Right c) "simple"
-  trace2 :: Trace IO Weird <- setupTrace (Right c) "simple"
-  logInfo trace "this is a string info message"
-  logInfo trace2 (Weird "this is a weird info message" 123)
+  tracer1 :: Tracer IO (LogObject String) <- setupTrace (Right c) "simple"
+
+  let tracer2 :: Tracer IO (LogObject MyMessage)
+      tracer2 = contramap converter tracer1
+
+  logInfo tracer1 "string info message"
+  logInfo tracer2 (MyMessage "my info message" 123)
 ```
 
 #### Output:
 
 .terminal[
-[iohk.simple:Info:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "this is a string info message"
-[iohk.simple:Info:ThreadId 4] [2019-04-03 21:39:29.66 UTC] Weird {ss = "this is a weird info message", ii = 123}
+[iohk.simple:Info:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "string info message"<br/>
+[iohk.simple:Info:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "MyMessage {ss = \"my info message\", ii = 123}"
 ]
+
+---
+
+## Real Life example
+
+
+.smaller-code[
+```haskell
+data MyMessage = MyMessage { ss :: String, ii :: Int }
+  deriving (Generic, Show, Eq, ToJSON)
+
+converter :: LogObject MyMessage -> LogObject String
+converter (LogObject nm me (LogMessage c)) = LogObject nm me (LogMessage (show c))
+
+fromStringToMyMessage
+    :: (LogObject MyMessage -> LogObject String)
+    -> Tracer IO (LogObject String)
+    -> Tracer IO (LogObject MyMessage)
+fromStringToMyMessage = contramap
+
+transformer
+    :: Tracer IO (LogObject String)
+    -> Tracer IO (LogObject MyMessage)
+transformer = fromStringToMyMessage converter
+
+main :: IO ()
+main = do
+  c <- defaultConfigStdout
+  tracer1 :: Tracer IO (LogObject String) <- setupTrace (Right c) "simple"
+
+  let tracer2 :: Tracer IO (LogObject MyMessage) = contramap converter tracer1
+      
+  let tracer3 :: Tracer IO (LogObject MyMessage) = transformer tracer1
+
+  logInfo    tracer1 "string info message"
+  logDebug   tracer2 (MyMessage "my debug message" 123)
+  logWarning tracer3 (MyMessage "my warning message" 456)
+```
+]
+
+#### Output:
+
+.terminal[
+[iohk.simple:Info:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "string info message"<br/>
+[iohk.simple:Debug:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "MyMessage {ss = \"my debug message\", ii = 123}"<br/>
+[iohk.simple:Warning:ThreadId 4] [2019-04-03 21:37:24.66 UTC] "MyMessage {ss = \"my warning message\", ii = 456}"
+]
+
+
+---
+
+## Tracer idea
+
+#### 1. Build the first tracer
+
+#### 2. Build the next tracer based on the first one: take existing context and <u>inject</u> some new info in it
+
+#### 3. And so on...
 
 ---
 
