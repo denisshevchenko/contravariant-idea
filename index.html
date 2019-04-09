@@ -372,7 +372,24 @@ main = do
 
 ---
 
+class: center, middle
+
 ## Real Life example
+
+---
+
+## Tracer
+
+```haskell
+newtype Tracer m a = Tracer { runTracer :: a -> m () }
+
+instance Contravariant (Tracer m) where
+  contramap f (Tracer t) = Tracer (t . f)
+```
+
+---
+
+## Usage
 
 ```haskell
 main :: IO ()
@@ -390,7 +407,7 @@ main = do
 
 ---
 
-## Real Life example
+## Usage
 
 ```haskell
 data MyMessage = MyMessage { ss :: String, ii :: Int }
@@ -420,8 +437,7 @@ main = do
 
 ---
 
-## Real Life example
-
+## Usage
 
 .smaller-code[
 ```haskell
@@ -470,9 +486,9 @@ main = do
 
 ## Tracer idea
 
-#### 1. Build the first tracer
+#### 1. Build the first tracer.
 
-#### 2. Build the next tracer based on the first one: take existing context and <u>inject</u> some new info in it
+#### 2. Build the next tracer based on the first one: take existing context and <u>inject</u> some new info in it.
 
 #### 3. And so on...
 
