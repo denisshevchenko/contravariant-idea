@@ -378,8 +378,8 @@ main = do
 main :: IO ()
 main = do
   c <- defaultConfigStdout
-  trace :: Trace IO String <- setupTrace (Right c) "simple"
-  logInfo trace "string info message"
+  tracer :: Tracer IO (LogObject String) <- setupTrace (Right c) "simple"
+  logInfo tracer "string info message"
 ```
 
 #### Output:
