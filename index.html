@@ -184,7 +184,7 @@ intStringifier :: Stringifier Int
 intStringifier = Stringifier show
 ```
 
-#### Make stringifier a contravariant functor:
+#### Let's make stringifier a contravariant functor:
 
 ```haskell
 instance Contravariant Stringifier where
@@ -193,9 +193,16 @@ instance Contravariant Stringifier where
 
 ---
 
-## Example
+## Usage
 
 ```haskell
+newtype Stringifier a = Stringifier
+  { runStringifier :: a -> String
+  }
+
+instance Contravariant Stringifier where
+  contramap f s = Stringifier (runStringifier s . f)
+
 newtype MyNumber = MyNumber Int
 
 times10 :: MyNumber -> Int
@@ -272,8 +279,6 @@ contramap times10 intStringifier = Stringifier (runStringifier intStringifier . 
 <span style="padding-left: 439px;"></span>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ##### <span style="padding-left: 439px;"></span>`MyNumber -> String`
 
-#### That's what `Contravariant` does!
-
 ```haskell
 class Contravariant f where
   contramap :: (a -> b) -> f b -> f a
@@ -332,6 +337,13 @@ instance Contravariant (Stringifier m) where
 ## Extended example
 
 ```haskell
+newtype Stringifier m a = Stringifier
+  { runStringifier :: a -> m ()
+  }
+  
+instance Contravariant (Stringifier m) where
+  contramap f s = Stringifier (runStringifier s . f)
+
 newtype MyNumber = MyNumber Int
 
 times10 :: MyNumber -> Int
